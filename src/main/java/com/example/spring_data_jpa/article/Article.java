@@ -1,7 +1,9 @@
 package com.example.spring_data_jpa.article;
 
-import com.example.spring_data_jpa.comment.Comment;
 import com.example.spring_data_jpa.topic.Topic;
+
+import java.time.LocalDate;
+import java.util.Set;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -11,16 +13,11 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
 import jakarta.persistence.UniqueConstraint;
-
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Set;
-
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -37,6 +34,7 @@ import io.hypersistence.utils.hibernate.type.basic.PostgreSQLEnumType;
 @Table(uniqueConstraints = {
         @UniqueConstraint(columnNames = {"title"}, name = "unique_article_title")
 })
+@EqualsAndHashCode
 @Getter
 @Setter
 public class Article {
@@ -47,7 +45,7 @@ public class Article {
     private String title;
     @Column(nullable = false)
     private String content;
-    @Column(columnDefinition = "status", nullable = false)
+    @Column(columnDefinition = "article_status", nullable = false)
     @Type(PostgreSQLEnumType.class)
     private ArticleStatus status;
     @Column(nullable = false)
@@ -62,19 +60,17 @@ public class Article {
             inverseJoinColumns = @JoinColumn(name = "topic_id")
     )
     private Set<Topic> topics;
-    @OneToMany(mappedBy = "article")
-    private List<Comment> comments;
 
     public Article() {
-        this.createdDate = LocalDate.now();
         this.status = ArticleStatus.CREATED;
+        this.createdDate = LocalDate.now();
     }
 
     public Article(String title, String content, Set<Topic> topics) {
-        this.createdDate = LocalDate.now();
-        this.status = ArticleStatus.CREATED;
         this.title = title;
         this.content = content;
+        this.status = ArticleStatus.CREATED;
+        this.createdDate = LocalDate.now();
         this.topics = topics;
     }
 }

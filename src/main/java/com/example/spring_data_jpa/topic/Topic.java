@@ -1,15 +1,11 @@
 package com.example.spring_data_jpa.topic;
 
-import com.example.spring_data_jpa.article.Article;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import io.hypersistence.utils.hibernate.type.basic.PostgreSQLEnumType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
@@ -20,7 +16,6 @@ import lombok.Setter;
 import org.hibernate.annotations.Type;
 
 import java.time.LocalDate;
-import java.util.Set;
 
 
 /*
@@ -45,11 +40,14 @@ public class Topic {
     @Column(columnDefinition = "status", nullable = false)
     @Type(PostgreSQLEnumType.class)
     private TopicStatus status;
-    @JsonIgnore
-    @ManyToMany(mappedBy = "topics")
-    private Set<Article> articles;
 
     public Topic() {
+        this.createdDate = LocalDate.now();
+        this.status = TopicStatus.CREATED;
+    }
+
+    public Topic(String name) {
+        this.name = name;
         this.createdDate = LocalDate.now();
         this.status = TopicStatus.CREATED;
     }

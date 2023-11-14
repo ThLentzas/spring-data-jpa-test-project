@@ -4,8 +4,5 @@ import com.example.spring_data_jpa.topic.TopicDTO;
 
 import java.util.Set;
 
-record ArticleCreateRequest(
-        String title,
-        String content,
-        Set<TopicDTO> topics) {
+record ArticleUpdateRequest(String title, String content, Set<TopicDTO> topics) {
 }

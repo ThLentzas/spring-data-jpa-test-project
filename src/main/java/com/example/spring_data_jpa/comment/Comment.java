@@ -1,19 +1,12 @@
 package com.example.spring_data_jpa.comment;
 
 import com.example.spring_data_jpa.article.Article;
-
 import io.hypersistence.utils.hibernate.type.basic.PostgreSQLEnumType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Temporal;
-import jakarta.persistence.TemporalType;
+import jakarta.persistence.*;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import org.hibernate.annotations.Type;
 
 import java.time.LocalDate;
@@ -25,6 +18,7 @@ import java.time.LocalDate;
 @Entity
 @Getter
 @Setter
+@ToString
 public class Comment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -40,4 +34,16 @@ public class Comment {
     private String username;
     @ManyToOne
     private Article article;
+
+    public Comment() {
+        this.createdDate = LocalDate.now();
+        this.status = CommentStatus.CREATED;
+    }
+
+    Comment(String content, String username) {
+        this.createdDate = LocalDate.now();
+        this.content = content;
+        this.status = CommentStatus.CREATED;
+        this.username = username;
+    }
 }

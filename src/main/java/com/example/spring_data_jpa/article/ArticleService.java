@@ -1,41 +1,172 @@
 package com.example.spring_data_jpa.article;
 
 import com.example.spring_data_jpa.exception.DuplicateResourceException;
+import com.example.spring_data_jpa.exception.ResourceNotFoundException;
 import com.example.spring_data_jpa.topic.Topic;
+import com.example.spring_data_jpa.topic.TopicDTO;
 import com.example.spring_data_jpa.topic.TopicRepository;
+
+import java.time.LocalDate;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.stereotype.Service;
 
-import java.util.HashSet;
-import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
-class ArticleService {
+public class ArticleService {
     private final ArticleRepository articleRepository;
     private final TopicRepository topicRepository;
     private static final ArticleDTOMapper mapper = new ArticleDTOMapper();
+    private static final String ARTICLE_NOT_FOUND_ERROR_MSG = "Article was not found with id: ";
 
-    public ArticleDTO createArticle(ArticleCreateRequest createRequest) {
-        if(articleRepository.existsByTitle(createRequest.title())) {
+    ArticleDTO createArticle(ArticleCreateRequest createRequest) {
+        if (this.articleRepository.existsByTitle(createRequest.title())) {
             throw new DuplicateResourceException("Article already exists with title: " + createRequest.title());
         }
 
-        Set<Topic> topics = new HashSet<>();
-        for (Topic topic : createRequest.topics()) {
-            topicRepository.findByName(topic.getName()).ifPresentOrElse(
-                    topics::add,
-                    () -> {
-                        topicRepository.save(topic);
-                        topics.add(topic);
-                    });
+        Set<Topic> topics = processTopics(createRequest.topics());
+        if (topics.isEmpty()) {
+            throw new IllegalArgumentException("You must provide at least one topic");
         }
 
         Article article = new Article(createRequest.title(), createRequest.content(), topics);
-        article = articleRepository.save(article);
+        article = this.articleRepository.save(article);
 
         return mapper.apply(article);
+    }
+
+    void updateArticle(Long articleId, ArticleUpdateRequest updateRequest) {
+        Article article = findArticleById(articleId);
+
+        if (updateRequest.title() != null && !updateRequest.title().isBlank()) {
+            if (this.articleRepository.existsByTitle(updateRequest.title())) {
+                throw new DuplicateResourceException(
+                        "Article already exists with title: " + updateRequest.title());
+            }
+            article.setTitle(updateRequest.title());
+        }
+
+        if (updateRequest.content() != null && !updateRequest.content().isBlank()) {
+            article.setContent(updateRequest.content());
+        }
+
+        /*
+            By calling article.setTopics(topics); Hibernate will delete the previous associations between
+            the specific article and any topics and will create in the table article_topic relations between
+            the specific article and the new topics.
+
+            By calling article.getTopics().addAll(topics) Hibernate will keep the previous relations and
+            will also create the new ones on the article_topic table.
+
+            The choice on which to choose depends on the business logic
+         */
+        if (updateRequest.topics() != null && !updateRequest.topics().isEmpty()) {
+            Set<TopicDTO> topicsDTO = updateRequest.topics().stream()
+                    .filter(topicDTO -> topicDTO.name() != null && !topicDTO.name().isBlank())
+                    .collect(Collectors.toSet());
+            Set<Topic> topics = processTopics(topicsDTO);
+            article.getTopics().addAll(topics);
+        }
+
+        this.articleRepository.save(article);
+    }
+
+    void updateArticleStatus(Long articleId, ArticleUpdateStatusRequest updateStatusRequest) {
+        Article article = findArticleById(articleId);
+        if(article.getStatus().equals(ArticleStatus.PUBLISHED)) {
+            throw new IllegalArgumentException("Article already published");
+        }
+
+        if(article.getStatus().equals(ArticleStatus.CREATED)
+                && !updateStatusRequest.status().equals(ArticleStatus.SUBMITTED)) {
+            throw new IllegalArgumentException("Article status is: " + article.getStatus().name().toLowerCase());
+        }
+
+        if(article.getStatus().equals(ArticleStatus.SUBMITTED)
+                && !updateStatusRequest.status().equals(ArticleStatus.APPROVED)) {
+            throw new IllegalArgumentException("Article status is: " + article.getStatus().name().toLowerCase());
+        }
+
+        if(article.getStatus().equals(ArticleStatus.APPROVED)
+                && !updateStatusRequest.status().equals(ArticleStatus.PUBLISHED)) {
+            throw new IllegalArgumentException("Article status is: " + article.getStatus().name().toLowerCase());
+        }
+
+        article.setStatus(updateStatusRequest.status());
+        if(article.getStatus().equals(ArticleStatus.PUBLISHED)) {
+            article.setPublishedDate(LocalDate.now());
+        }
+
+        this.articleRepository.save(article);
+    }
+
+    List<ArticleDTO> findArticles(String title, String content) {
+        List<Article> articles;
+
+        if(title.isBlank() && content.isBlank()) {
+            throw new IllegalArgumentException("You have to provide either the title or the content of the article");
+        }
+
+        if(title.isBlank()) {
+            articles = this.articleRepository.findArticlesByContentContainingIgnoringCase(content).orElse(
+                    Collections.emptyList());
+
+            return articles.stream()
+                    .map(mapper)
+                    .toList();
+        }
+
+        if(content.isBlank()) {
+            articles = this.articleRepository.findArticlesByTitleContainingIgnoringCase(title).orElse(
+                    Collections.emptyList());
+
+            return articles.stream()
+                    .map(mapper)
+                    .toList();
+        }
+
+        /*
+            We have to create a Set to remove articles that we would include them when searching by title and include
+            them again when searching by content.
+         */
+        articles = this.articleRepository.findArticlesByTitleContainingIgnoringCase(title).orElse(
+                Collections.emptyList());
+        articles.addAll(this.articleRepository.findArticlesByContentContainingIgnoringCase(content).orElse(
+                Collections.emptyList()));
+        Set<Article> articleSet = new HashSet<>(articles);
+
+        return articleSet.stream()
+                .map(mapper)
+                .toList();
+    }
+
+    public Article findArticleById(Long articleId) {
+        return articleRepository.findById(articleId).orElseThrow(() ->
+                new ResourceNotFoundException(ARTICLE_NOT_FOUND_ERROR_MSG + articleId));
+    }
+
+    private Set<Topic> processTopics(Set<TopicDTO> topicsDTO) {
+        Set<Topic> topics = new HashSet<>();
+
+        /*
+            For every topic that was submitted, we will associate the article with those that their name is not null nor
+            blank. If none of the topic has a valid name an empty set is returned.
+         */
+        for (TopicDTO topicDTO : topicsDTO) {
+            if (topicDTO.name() != null && !topicDTO.name().isBlank()) {
+                this.topicRepository.findByName(topicDTO.name()).ifPresentOrElse(
+                        topics::add,
+                        () -> {
+                            Topic topic = new Topic(topicDTO.name());
+                            this.topicRepository.save(topic);
+                            topics.add(topic);
+                        });
+            }
+        }
+        return topics;
     }
 }

@@ -1,11 +1,9 @@
 package com.example.spring_data_jpa.article;
 
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Set;
 
-import com.example.spring_data_jpa.comment.Comment;
-import com.example.spring_data_jpa.topic.Topic;
+import com.example.spring_data_jpa.topic.TopicDTO;
 
 record ArticleDTO(
         Long id,
@@ -14,6 +12,5 @@ record ArticleDTO(
         ArticleStatus status,
         LocalDate createdDate,
         LocalDate publishedDate,
-        Set<Topic> topics,
-        List<Comment> comments) {
+        Set<TopicDTO> topics) {
 }

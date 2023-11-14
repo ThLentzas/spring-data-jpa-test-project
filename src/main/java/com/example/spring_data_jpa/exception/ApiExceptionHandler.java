@@ -15,4 +15,18 @@ class ApiExceptionHandler {
 
         return new ResponseEntity<>(apiError, HttpStatus.CONFLICT);
     }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    private ResponseEntity<ApiError> handleResourceNotFoundException(ResourceNotFoundException se) {
+        ApiError apiError = new ApiError(se.getMessage(), HttpStatus.NOT_FOUND.value());
+
+        return new ResponseEntity<>(apiError, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    private ResponseEntity<ApiError> handleIllegalArgumentException(IllegalArgumentException iae) {
+        ApiError apiError = new ApiError(iae.getMessage(), HttpStatus.BAD_REQUEST.value());
+
+        return new ResponseEntity<>(apiError, HttpStatus.BAD_REQUEST);
+    }
 }

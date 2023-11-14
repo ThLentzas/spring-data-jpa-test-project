@@ -1,6 +1,6 @@
 CREATE TYPE article_status AS ENUM (
     'CREATED',
-    'SUBMITTED'
+    'SUBMITTED',
     'APPROVED',
     'PUBLISHED'
 );
