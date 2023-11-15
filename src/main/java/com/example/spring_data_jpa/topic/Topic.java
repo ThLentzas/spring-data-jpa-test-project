@@ -1,8 +1,15 @@
 package com.example.spring_data_jpa.topic;
 
 import io.hypersistence.utils.hibernate.type.basic.PostgreSQLEnumType;
-import jakarta.persistence.*;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Type;
@@ -32,7 +39,7 @@ public class Topic {
     @Column(nullable = false)
     @CreatedDate
     private LocalDate createdDate;
-    @Column(columnDefinition = "status", nullable = false)
+    @Column(columnDefinition = "comment_topic_status", nullable = false)
     @Type(PostgreSQLEnumType.class)
     private TopicStatus status;
 

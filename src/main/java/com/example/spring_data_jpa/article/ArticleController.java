@@ -22,6 +22,11 @@ import java.time.LocalDate;
 import java.util.List;
 
 
+/*
+    This Controller contains both endpoints for Article and Comment, because Comment is a weak Entity and can only
+    exist with an Article. In a different case we could have a CommentController where for example we could return all
+    comments for a specific user.
+ */
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/articles")
@@ -34,14 +39,6 @@ class ArticleController {
         ArticleDTO articleDTO = this.articleService.createArticle(createRequest);
 
         return new ResponseEntity<>(articleDTO, HttpStatus.CREATED);
-    }
-
-    @PostMapping("/{id}/comments")
-    ResponseEntity<CommentDTO> addComment(@PathVariable Long id,
-                                          @RequestBody CommentCreateRequest commentCreateRequest) {
-        CommentDTO commentDTO = this.commentService.addComment(id, commentCreateRequest);
-
-        return new ResponseEntity<>(commentDTO, HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
@@ -85,5 +82,24 @@ class ArticleController {
         List<ArticleDTO> articles = this.articleService.findAllArticles(status, startDate, endDate);
 
         return new ResponseEntity<>(articles, HttpStatus.OK);
+    }
+
+    @PostMapping("/{id}/comments")
+    ResponseEntity<CommentDTO> addComment(@PathVariable Long id,
+                                          @RequestBody CommentCreateRequest commentCreateRequest) {
+        CommentDTO commentDTO = this.commentService.addComment(id, commentCreateRequest);
+
+        return new ResponseEntity<>(commentDTO, HttpStatus.CREATED);
+    }
+
+    @PutMapping("/{articleId}/comments/{commentId}/status")
+    ResponseEntity<Void> updateCommentStatus(@PathVariable Long articleId,
+                                             @PathVariable Long commentId,
+                                             @RequestParam(
+                                                     value = "action",
+                                                     defaultValue = "",
+                                                     required = false) String action) {
+        this.commentService.updateCommentStatus(articleId, commentId, action);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }

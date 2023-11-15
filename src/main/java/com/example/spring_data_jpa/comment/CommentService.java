@@ -33,4 +33,24 @@ public class CommentService {
 
         return commentDTOMapper.apply(comment);
     }
+
+    public void updateCommentStatus(Long articleId, Long commentId, String action) {
+        Comment comment = this.commentRepository.findByArticleIdAndId(articleId, commentId).orElseThrow(
+                () -> new ResourceNotFoundException("Comment was not found with id: " + commentId));
+
+        if(comment.getStatus().equals(CommentStatus.APPROVED)) {
+            throw new IllegalArgumentException("Comment has been approved");
+        }
+
+        if(!action.isBlank() && action.equalsIgnoreCase("approve")) {
+            comment.setStatus(CommentStatus.APPROVED);
+            this.commentRepository.save(comment);
+        }
+
+        if(!action.isBlank() && action.equalsIgnoreCase("reject")) {
+            this.commentRepository.delete(comment);
+        }
+
+        //Here some other value than approve or reject was provided, so we should handle with some exception
+    }
 }

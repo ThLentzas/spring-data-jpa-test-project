@@ -2,12 +2,21 @@ package com.example.spring_data_jpa.comment;
 
 import com.example.spring_data_jpa.article.Article;
 import io.hypersistence.utils.hibernate.type.basic.PostgreSQLEnumType;
-import jakarta.persistence.*;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Temporal;
+import jakarta.persistence.TemporalType;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.annotations.Type;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDate;
@@ -20,16 +29,17 @@ import java.time.LocalDate;
 @Getter
 @Setter
 @EntityListeners(AuditingEntityListener.class)
+@ToString
 public class Comment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @Column(nullable = false)
-    @Temporal(TemporalType.DATE)
+    @CreatedDate
     private LocalDate createdDate;
     @Column(nullable = false)
     private String content;
-    @Column(columnDefinition = "status", nullable = false)
+    @Column(columnDefinition = "comment_topic_status", nullable = false)
     @Type(PostgreSQLEnumType.class)
     private CommentStatus status;
     private String username;
