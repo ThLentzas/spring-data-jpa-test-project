@@ -1,6 +1,7 @@
 package com.example.spring_data_jpa.comment;
 
 import com.example.spring_data_jpa.article.Article;
+import com.example.spring_data_jpa.article.ArticleRepository;
 import com.example.spring_data_jpa.article.ArticleService;
 import com.example.spring_data_jpa.article.ArticleStatus;
 import com.example.spring_data_jpa.exception.ResourceNotFoundException;
@@ -14,13 +15,16 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class CommentService {
     private final CommentRepository commentRepository;
-    private final ArticleService articleService;
+    private final ArticleRepository articleRepository;
+    private static final String ARTICLE_NOT_FOUND_ERROR_MSG = "Article was not found with id: ";
     private static final CommentDTOMapper commentDTOMapper = new CommentDTOMapper();
 
     public CommentDTO addComment(Long articleId, CommentCreateRequest commentCreateRequest) {
-        Article article = this.articleService.findArticleById(articleId);
+        Article article = this.articleRepository.findById(articleId).orElseThrow(() ->
+                new ResourceNotFoundException(ARTICLE_NOT_FOUND_ERROR_MSG + articleId));
+
         if(!article.getStatus().equals(ArticleStatus.PUBLISHED)) {
-            throw new ResourceNotFoundException("Article was not found with id: " + articleId);
+            throw new ResourceNotFoundException(ARTICLE_NOT_FOUND_ERROR_MSG + articleId);
         }
 
         Comment comment = new Comment(commentCreateRequest.content(), commentCreateRequest.username());

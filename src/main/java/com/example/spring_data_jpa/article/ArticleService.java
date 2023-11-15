@@ -7,7 +7,11 @@ import com.example.spring_data_jpa.topic.TopicDTO;
 import com.example.spring_data_jpa.topic.TopicRepository;
 
 import java.time.LocalDate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import lombok.RequiredArgsConstructor;
@@ -40,7 +44,8 @@ public class ArticleService {
     }
 
     void updateArticle(Long articleId, ArticleUpdateRequest updateRequest) {
-        Article article = findArticleById(articleId);
+        Article article = this.articleRepository.findById(articleId).orElseThrow(() ->
+                new ResourceNotFoundException(ARTICLE_NOT_FOUND_ERROR_MSG + articleId));
 
         if (updateRequest.title() != null && !updateRequest.title().isBlank()) {
             if (this.articleRepository.existsByTitle(updateRequest.title())) {
@@ -69,14 +74,15 @@ public class ArticleService {
                     .filter(topicDTO -> topicDTO.name() != null && !topicDTO.name().isBlank())
                     .collect(Collectors.toSet());
             Set<Topic> topics = processTopics(topicsDTO);
-            article.getTopics().addAll(topics);
+            article.setTopics(topics);
         }
 
         this.articleRepository.save(article);
     }
 
     void updateArticleStatus(Long articleId, ArticleUpdateStatusRequest updateStatusRequest) {
-        Article article = findArticleById(articleId);
+        Article article = this.articleRepository.findById(articleId).orElseThrow(() ->
+                new ResourceNotFoundException(ARTICLE_NOT_FOUND_ERROR_MSG + articleId));
         if(article.getStatus().equals(ArticleStatus.PUBLISHED)) {
             throw new IllegalArgumentException("Article already published");
         }
@@ -104,6 +110,9 @@ public class ArticleService {
         this.articleRepository.save(article);
     }
 
+    /*
+        Finds articles with a given title and/or content
+     */
     List<ArticleDTO> findArticles(String title, String content) {
         List<Article> articles;
 
@@ -112,7 +121,7 @@ public class ArticleService {
         }
 
         if(title.isBlank()) {
-            articles = this.articleRepository.findArticlesByContentContainingIgnoringCase(content).orElse(
+            articles = this.articleRepository.findByContentContainingIgnoringCase(content).orElse(
                     Collections.emptyList());
 
             return articles.stream()
@@ -121,7 +130,7 @@ public class ArticleService {
         }
 
         if(content.isBlank()) {
-            articles = this.articleRepository.findArticlesByTitleContainingIgnoringCase(title).orElse(
+            articles = this.articleRepository.findByTitleContainingIgnoringCase(title).orElse(
                     Collections.emptyList());
 
             return articles.stream()
@@ -133,9 +142,9 @@ public class ArticleService {
             We have to create a Set to remove articles that we would include them when searching by title and include
             them again when searching by content.
          */
-        articles = this.articleRepository.findArticlesByTitleContainingIgnoringCase(title).orElse(
+        articles = this.articleRepository.findByTitleContainingIgnoringCase(title).orElse(
                 Collections.emptyList());
-        articles.addAll(this.articleRepository.findArticlesByContentContainingIgnoringCase(content).orElse(
+        articles.addAll(this.articleRepository.findByContentContainingIgnoringCase(content).orElse(
                 Collections.emptyList()));
         Set<Article> articleSet = new HashSet<>(articles);
 
@@ -144,9 +153,104 @@ public class ArticleService {
                 .toList();
     }
 
-    public Article findArticleById(Long articleId) {
-        return articleRepository.findById(articleId).orElseThrow(() ->
+    ArticleDTO findArticleById(Long articleId) {
+        Article article = articleRepository.findById(articleId).orElseThrow(() ->
                 new ResourceNotFoundException(ARTICLE_NOT_FOUND_ERROR_MSG + articleId));
+
+        return mapper.apply(article);
+    }
+
+    List<ArticleDTO> findAllArticles(ArticleStatus status, LocalDate startDate, LocalDate endDate) {
+        List<Article> articles;
+
+        if(status != null && startDate != null && endDate != null) {
+            throw new IllegalArgumentException("Select 1 filter at a time");
+        }
+
+        /*
+            No filtering all articles returned.
+         */
+        if(status == null && startDate == null && endDate == null) {
+            articles = findAllArticlesNoFilter();
+
+            return articles.stream()
+                    .map(mapper)
+                    .toList();
+        }
+
+        if(status == null && (startDate == null || endDate == null)) {
+            throw new IllegalArgumentException("You must provide both dates");
+        }
+
+        /*
+            Filter is date range. We return the published articles where their published date is in the provided date
+            range. For the rest of the articles we return based on their created date.
+         */
+        if(status == null) {
+            articles = findAllArticlesInDateRange(startDate, endDate);
+
+            return articles.stream()
+                    .map(mapper)
+                    .toList();
+        }
+
+        articles = findAllArticlesByStatus(status);
+
+        return articles.stream()
+                .map(mapper)
+                .toList();
+
+    }
+
+    private List<Article> findAllArticlesByStatus(ArticleStatus status) {
+        /*
+            If the provided status is published we return all published articles in descending order based on their
+            published date. For any other status we return those articles with the given status in descending order
+            based on their created date.
+         */
+        if(status.equals(ArticleStatus.PUBLISHED)) {
+            return this.articleRepository.findAllByStatusOrderByPublishedDateDesc(ArticleStatus.PUBLISHED).orElse(
+                    Collections.emptyList());
+        }
+        return this.articleRepository.findAllByStatusOrderByCreatedDateDesc(status).orElse(
+                Collections.emptyList());
+    }
+
+    private List<Article> findAllArticlesInDateRange(LocalDate from, LocalDate to) {
+        List<Article> articles = new ArrayList<>();
+        List<Article >publishedArticles = this.articleRepository.findAllByStatusAndPublishedDateBetween(
+                ArticleStatus.PUBLISHED,
+                from,
+                to).orElse(Collections.emptyList());
+        List<Article> nonPublishedArticles = this.articleRepository.findAllByStatusNotAndCreatedDateBetween(
+                ArticleStatus.PUBLISHED,
+                from,
+                to).orElse(Collections.emptyList());
+
+        articles.addAll(publishedArticles);
+        articles.addAll(nonPublishedArticles);
+
+        return articles;
+    }
+
+    /*
+        This method gets called when GET all articles is called without any filters(status or date range).
+
+        Fetching the Published articles and sorting them by their published date.
+        Fetching the rest of the articles and sorting them by their status first and then their created date.
+        Combining both lists will keep the correct order first the published ones and then the rest.
+     */
+    private List<Article> findAllArticlesNoFilter() {
+        List<Article> articles = new ArrayList<>();
+        List<Article> publishedArticles = this.articleRepository.findAllByStatusOrderByPublishedDateDesc(
+                ArticleStatus.PUBLISHED).orElse(Collections.emptyList());
+        List<Article> nonPublishedArticles = this.articleRepository.findAllNonPublishedOrderByStatusAndCreatedDateDesc(
+                ArticleStatus.PUBLISHED).orElse(Collections.emptyList());
+
+        articles.addAll(publishedArticles);
+        articles.addAll(nonPublishedArticles);
+
+        return articles;
     }
 
     private Set<Topic> processTopics(Set<TopicDTO> topicsDTO) {

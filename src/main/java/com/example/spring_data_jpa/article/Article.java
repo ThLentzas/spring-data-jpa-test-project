@@ -7,6 +7,7 @@ import java.util.Set;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -24,6 +25,8 @@ import lombok.Setter;
 import org.hibernate.annotations.Type;
 
 import io.hypersistence.utils.hibernate.type.basic.PostgreSQLEnumType;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 
 /*
@@ -37,6 +40,7 @@ import io.hypersistence.utils.hibernate.type.basic.PostgreSQLEnumType;
 @EqualsAndHashCode
 @Getter
 @Setter
+@EntityListeners(AuditingEntityListener.class)
 public class Article {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -49,7 +53,7 @@ public class Article {
     @Type(PostgreSQLEnumType.class)
     private ArticleStatus status;
     @Column(nullable = false)
-    @Temporal(TemporalType.DATE)
+    @CreatedDate
     private LocalDate createdDate;
     @Temporal(TemporalType.DATE)
     private LocalDate publishedDate;
@@ -63,14 +67,12 @@ public class Article {
 
     public Article() {
         this.status = ArticleStatus.CREATED;
-        this.createdDate = LocalDate.now();
     }
 
     public Article(String title, String content, Set<Topic> topics) {
         this.title = title;
         this.content = content;
         this.status = ArticleStatus.CREATED;
-        this.createdDate = LocalDate.now();
         this.topics = topics;
     }
 }

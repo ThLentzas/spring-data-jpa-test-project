@@ -1,19 +1,13 @@
 package com.example.spring_data_jpa.topic;
 
 import io.hypersistence.utils.hibernate.type.basic.PostgreSQLEnumType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.Temporal;
-import jakarta.persistence.TemporalType;
-import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.*;
 
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Type;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDate;
 
@@ -28,6 +22,7 @@ import java.time.LocalDate;
 })
 @Getter
 @Setter
+@EntityListeners(AuditingEntityListener.class)
 public class Topic {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -35,20 +30,18 @@ public class Topic {
     @Column(nullable = false)
     private String name;
     @Column(nullable = false)
-    @Temporal(TemporalType.DATE)
+    @CreatedDate
     private LocalDate createdDate;
     @Column(columnDefinition = "status", nullable = false)
     @Type(PostgreSQLEnumType.class)
     private TopicStatus status;
 
     public Topic() {
-        this.createdDate = LocalDate.now();
         this.status = TopicStatus.CREATED;
     }
 
     public Topic(String name) {
         this.name = name;
-        this.createdDate = LocalDate.now();
         this.status = TopicStatus.CREATED;
     }
 }

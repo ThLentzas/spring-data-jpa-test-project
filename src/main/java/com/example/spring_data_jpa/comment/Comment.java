@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.annotations.Type;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDate;
 
@@ -18,7 +19,7 @@ import java.time.LocalDate;
 @Entity
 @Getter
 @Setter
-@ToString
+@EntityListeners(AuditingEntityListener.class)
 public class Comment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -36,12 +37,10 @@ public class Comment {
     private Article article;
 
     public Comment() {
-        this.createdDate = LocalDate.now();
         this.status = CommentStatus.CREATED;
     }
 
     Comment(String content, String username) {
-        this.createdDate = LocalDate.now();
         this.content = content;
         this.status = CommentStatus.CREATED;
         this.username = username;

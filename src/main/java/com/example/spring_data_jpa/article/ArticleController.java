@@ -1,15 +1,24 @@
 package com.example.spring_data_jpa.article;
 
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 
 import com.example.spring_data_jpa.comment.CommentCreateRequest;
 import com.example.spring_data_jpa.comment.CommentDTO;
 import com.example.spring_data_jpa.comment.CommentService;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDate;
 import java.util.List;
 
 
@@ -54,11 +63,27 @@ class ArticleController {
     ResponseEntity<List<ArticleDTO>> findArticles(
             @RequestParam(value = "title", defaultValue = "", required = false) String title,
             @RequestParam(value = "content", defaultValue = "", required = false) String content) {
-
         List<ArticleDTO> articles = this.articleService.findArticles(title, content);
 
         return new ResponseEntity<>(articles, HttpStatus.OK);
     }
 
+    @GetMapping("/{id}")
+    ResponseEntity<ArticleDTO> findArticleById(@PathVariable Long id) {
+        ArticleDTO article = this.articleService.findArticleById(id);
 
+        return new ResponseEntity<>(article, HttpStatus.OK);
+    }
+
+    @GetMapping
+    ResponseEntity<List<ArticleDTO>> findAllArticles(
+            @RequestParam(value = "status", required = false) ArticleStatus status,
+            @RequestParam(value = "startDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate startDate,
+            @RequestParam(value = "endDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate endDate) {
+        List<ArticleDTO> articles = this.articleService.findAllArticles(status, startDate, endDate);
+
+        return new ResponseEntity<>(articles, HttpStatus.OK);
+    }
 }
