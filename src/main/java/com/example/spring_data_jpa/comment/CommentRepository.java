@@ -2,7 +2,9 @@ package com.example.spring_data_jpa.comment;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 interface CommentRepository extends JpaRepository<Comment, Long> {
@@ -19,6 +21,18 @@ interface CommentRepository extends JpaRepository<Comment, Long> {
                 FROM Comment c
                 WHERE c.article.id = :articleId AND c.id = :commentId
             """)
-    Optional<Comment> findByArticleIdAndId(Long articleId, Long commentId);
+    Optional<Comment> findByArticleIdAndId(@Param("articleId") Long articleId, @Param("commentId")Long commentId);
+
+    /*
+        Fetches all comments for a given article on descending order based on their created date.
+     */
+    @Query("""
+                SELECT c
+                FROM Comment c
+                WHERE c.article.id = :articleId
+                ORDER BY c.createdDate DESC
+            """)
+    List<Comment> findAllByArticleIdOrderByCreatedDateDesc(@Param("articleId") Long articleId);
+
 
 }

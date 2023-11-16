@@ -29,4 +29,11 @@ class ApiExceptionHandler {
 
         return new ResponseEntity<>(apiError, HttpStatus.BAD_REQUEST);
     }
+
+    @ExceptionHandler(StatusConflictException.class)
+    private ResponseEntity<ApiError> handleStatusConflictException(StatusConflictException sc) {
+        ApiError apiError = new ApiError(sc.getMessage(), HttpStatus.CONFLICT.value());
+
+        return new ResponseEntity<>(apiError, HttpStatus.CONFLICT);
+    }
 }

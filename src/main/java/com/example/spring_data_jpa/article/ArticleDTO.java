@@ -5,7 +5,8 @@ import java.util.Set;
 
 import com.example.spring_data_jpa.topic.TopicDTO;
 
-record ArticleDTO(
+
+public record ArticleDTO(
         Long id,
         String title,
         String content,

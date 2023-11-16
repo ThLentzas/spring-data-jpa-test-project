@@ -1,14 +1,5 @@
 package com.example.spring_data_jpa.article;
 
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-
-import com.example.spring_data_jpa.comment.CommentCreateRequest;
-import com.example.spring_data_jpa.comment.CommentDTO;
-import com.example.spring_data_jpa.comment.CommentService;
-
-import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,9 +9,19 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.spring_data_jpa.comment.CommentDTO;
+import com.example.spring_data_jpa.comment.CommentService;
+import com.example.spring_data_jpa.comment.CommentCreateRequest;
+import com.example.spring_data_jpa.comment.CommentUpdateRequest;
+
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+
 import java.time.LocalDate;
 import java.util.List;
 
+import lombok.RequiredArgsConstructor;
 
 /*
     This Controller contains both endpoints for Article and Comment, because Comment is a weak Entity and can only
@@ -57,10 +58,10 @@ class ArticleController {
     }
 
     @GetMapping("/search")
-    ResponseEntity<List<ArticleDTO>> findArticles(
+    ResponseEntity<List<ArticleDTO>> findArticlesByTitleAndOrContent(
             @RequestParam(value = "title", defaultValue = "", required = false) String title,
             @RequestParam(value = "content", defaultValue = "", required = false) String content) {
-        List<ArticleDTO> articles = this.articleService.findArticles(title, content);
+        List<ArticleDTO> articles = this.articleService.findArticlesByTitleAndOrContent(title, content);
 
         return new ResponseEntity<>(articles, HttpStatus.OK);
     }
@@ -101,5 +102,21 @@ class ArticleController {
                                                      required = false) String action) {
         this.commentService.updateCommentStatus(articleId, commentId, action);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+    @PutMapping("/{articleId}/comments/{commentId}")
+    ResponseEntity<Void> updateComment(@PathVariable Long articleId,
+                                       @PathVariable Long commentId,
+                                       @RequestBody CommentUpdateRequest commentUpdateRequest) {
+        this.commentService.updateComment(articleId, commentId, commentUpdateRequest);
+
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+    @GetMapping("/{articleId}/comments")
+    ResponseEntity<List<CommentDTO>> findAllCommentsByArticleId(@PathVariable Long articleId) {
+        List<CommentDTO> comments = this.commentService.finAllCommentsByArticleId(articleId);
+
+        return new ResponseEntity<>(comments, HttpStatus.OK);
     }
 }

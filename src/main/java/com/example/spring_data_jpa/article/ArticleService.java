@@ -2,13 +2,13 @@ package com.example.spring_data_jpa.article;
 
 import com.example.spring_data_jpa.exception.DuplicateResourceException;
 import com.example.spring_data_jpa.exception.ResourceNotFoundException;
+import com.example.spring_data_jpa.exception.StatusConflictException;
 import com.example.spring_data_jpa.topic.Topic;
 import com.example.spring_data_jpa.topic.TopicDTO;
 import com.example.spring_data_jpa.topic.TopicRepository;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -47,6 +47,10 @@ public class ArticleService {
         Article article = this.articleRepository.findById(articleId).orElseThrow(() ->
                 new ResourceNotFoundException(ARTICLE_NOT_FOUND_ERROR_MSG + articleId));
 
+        if(article.getStatus().equals(ArticleStatus.PUBLISHED)) {
+            throw new StatusConflictException("Article is already published and cannot be modified");
+        }
+
         if (updateRequest.title() != null && !updateRequest.title().isBlank()) {
             if (this.articleRepository.existsByTitle(updateRequest.title())) {
                 throw new DuplicateResourceException(
@@ -84,7 +88,7 @@ public class ArticleService {
         Article article = this.articleRepository.findById(articleId).orElseThrow(() ->
                 new ResourceNotFoundException(ARTICLE_NOT_FOUND_ERROR_MSG + articleId));
         if(article.getStatus().equals(ArticleStatus.PUBLISHED)) {
-            throw new IllegalArgumentException("Article already published");
+            throw new StatusConflictException("Article already published");
         }
 
         if(article.getStatus().equals(ArticleStatus.CREATED)
@@ -113,7 +117,7 @@ public class ArticleService {
     /*
         Finds articles with a given title and/or content
      */
-    List<ArticleDTO> findArticles(String title, String content) {
+    List<ArticleDTO> findArticlesByTitleAndOrContent(String title, String content) {
         List<Article> articles;
 
         if(title.isBlank() && content.isBlank()) {
@@ -121,8 +125,7 @@ public class ArticleService {
         }
 
         if(title.isBlank()) {
-            articles = this.articleRepository.findByContentContainingIgnoringCase(content).orElse(
-                    Collections.emptyList());
+            articles = this.articleRepository.findByContentContainingIgnoringCase(content);
 
             return articles.stream()
                     .map(mapper)
@@ -130,8 +133,7 @@ public class ArticleService {
         }
 
         if(content.isBlank()) {
-            articles = this.articleRepository.findByTitleContainingIgnoringCase(title).orElse(
-                    Collections.emptyList());
+            articles = this.articleRepository.findByTitleContainingIgnoringCase(title);
 
             return articles.stream()
                     .map(mapper)
@@ -142,10 +144,8 @@ public class ArticleService {
             We have to create a Set to remove articles that we would include them when searching by title and include
             them again when searching by content.
          */
-        articles = this.articleRepository.findByTitleContainingIgnoringCase(title).orElse(
-                Collections.emptyList());
-        articles.addAll(this.articleRepository.findByContentContainingIgnoringCase(content).orElse(
-                Collections.emptyList()));
+        articles = this.articleRepository.findByTitleContainingIgnoringCase(title);
+        articles.addAll(this.articleRepository.findByContentContainingIgnoringCase(content));
         Set<Article> articleSet = new HashSet<>(articles);
 
         return articleSet.stream()
@@ -209,23 +209,21 @@ public class ArticleService {
             based on their created date.
          */
         if(status.equals(ArticleStatus.PUBLISHED)) {
-            return this.articleRepository.findAllByStatusOrderByPublishedDateDesc(ArticleStatus.PUBLISHED).orElse(
-                    Collections.emptyList());
+            return this.articleRepository.findAllByStatusOrderByPublishedDateDesc(ArticleStatus.PUBLISHED);
         }
-        return this.articleRepository.findAllByStatusOrderByCreatedDateDesc(status).orElse(
-                Collections.emptyList());
+        return this.articleRepository.findAllByStatusOrderByCreatedDateDesc(status);
     }
 
-    private List<Article> findAllArticlesInDateRange(LocalDate from, LocalDate to) {
+    private List<Article> findAllArticlesInDateRange(LocalDate startDate, LocalDate endDate) {
         List<Article> articles = new ArrayList<>();
         List<Article >publishedArticles = this.articleRepository.findAllByStatusAndPublishedDateBetween(
                 ArticleStatus.PUBLISHED,
-                from,
-                to).orElse(Collections.emptyList());
+                startDate,
+                endDate);
         List<Article> nonPublishedArticles = this.articleRepository.findAllByStatusNotAndCreatedDateBetween(
                 ArticleStatus.PUBLISHED,
-                from,
-                to).orElse(Collections.emptyList());
+                startDate,
+                endDate);
 
         articles.addAll(publishedArticles);
         articles.addAll(nonPublishedArticles);
@@ -243,9 +241,9 @@ public class ArticleService {
     private List<Article> findAllArticlesNoFilter() {
         List<Article> articles = new ArrayList<>();
         List<Article> publishedArticles = this.articleRepository.findAllByStatusOrderByPublishedDateDesc(
-                ArticleStatus.PUBLISHED).orElse(Collections.emptyList());
+                ArticleStatus.PUBLISHED);
         List<Article> nonPublishedArticles = this.articleRepository.findAllNonPublishedOrderByStatusAndCreatedDateDesc(
-                ArticleStatus.PUBLISHED).orElse(Collections.emptyList());
+                ArticleStatus.PUBLISHED);
 
         articles.addAll(publishedArticles);
         articles.addAll(nonPublishedArticles);
@@ -259,10 +257,13 @@ public class ArticleService {
         /*
             For every topic that was submitted, we will associate the article with those that their name is not null nor
             blank. If none of the topic has a valid name an empty set is returned.
+
+            Case 1: Topic already exists, we add it to the list of topics to be associated with the article.
+            Case 2: Topic doesn't exist, so we create it first and then add it to the list.
          */
         for (TopicDTO topicDTO : topicsDTO) {
             if (topicDTO.name() != null && !topicDTO.name().isBlank()) {
-                this.topicRepository.findByName(topicDTO.name()).ifPresentOrElse(
+                this.topicRepository.findByNameIgnoreCase(topicDTO.name()).ifPresentOrElse(
                         topics::add,
                         () -> {
                             Topic topic = new Topic(topicDTO.name());

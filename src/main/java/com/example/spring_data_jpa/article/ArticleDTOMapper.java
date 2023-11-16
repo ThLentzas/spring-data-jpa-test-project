@@ -6,7 +6,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 
-class ArticleDTOMapper implements Function<Article, ArticleDTO> {
+public class ArticleDTOMapper implements Function<Article, ArticleDTO> {
     private static final TopicDTOMapper topicDTOmapper = new TopicDTOMapper();
 
     @Override
