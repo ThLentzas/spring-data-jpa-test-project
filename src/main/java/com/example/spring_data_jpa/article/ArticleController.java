@@ -57,6 +57,11 @@ class ArticleController {
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
+    /*
+        In this endpoint since we can have a search with both the title and content or with either, we can't remove the
+        required = false from either but if none is submitted an exception will be thrown because at least 1 query param
+        is required.
+     */
     @GetMapping("/search")
     ResponseEntity<List<ArticleDTO>> findArticlesByTitleAndOrContent(
             @RequestParam(value = "title", defaultValue = "", required = false) String title,

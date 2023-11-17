@@ -39,10 +39,8 @@ class TopicController {
 
     @PutMapping("/{id}/status")
     ResponseEntity<Void> updateTopicStatus(@PathVariable Long id,
-                                           @RequestParam(
-                                                   value = "action",
-                                                   defaultValue = "",
-                                                   required = false) String action) {
+                                           @RequestParam(value = "action", defaultValue = "")
+                                           String action) {
         this.topicService.updateTopicStatus(id, action);
 
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
@@ -76,10 +74,17 @@ class TopicController {
         return new ResponseEntity<>(articles, HttpStatus.OK);
     }
 
-//    @GetMapping("/articles")
-//    ResponseEntity<List<ArticleDTO>> findArticlesByTopicName(@RequestParam("name") String name) {
-//        List<ArticleDTO> articles = this.topicService.findArticlesByTopicName(name);
-//
-//        return new ResponseEntity<>(articles, HttpStatus.OK);
-//    }
+    /*
+        About this endpoint, not sure if it's the correct path. In this request param we don't have required = false
+        because if no name is provided an empty string will be assigned and an exception will be thrown.
+
+        /topics?name=topic/articles is not valid, because query params are always in the end of the URI.
+     */
+    @GetMapping("/articles")
+    ResponseEntity<List<ArticleDTO>> findArticlesByTopicName(@RequestParam(value = "topicName", defaultValue = "")
+                                                             String topicName) {
+        List<ArticleDTO> articles = this.topicService.findArticlesByTopicName(topicName);
+
+        return new ResponseEntity<>(articles, HttpStatus.OK);
+    }
 }

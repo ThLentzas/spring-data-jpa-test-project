@@ -123,9 +123,13 @@ class TopicService {
 
     /*
         Finding the topic by name and then using the topic's id to find all the associated articles. If the topic is not
-        or articles for the specific topic are not found we return an emtpy list.
+        or articles for the specific topic are not found we return an empty list.
      */
     List<ArticleDTO> findArticlesByTopicName(String name) {
+        if(name.isBlank()) {
+            throw new IllegalArgumentException("You must provide a topic name");
+        }
+
         return topicRepository.findByNameIgnoreCase(name)
                 .map(topic -> articleRepository.findAllByTopicsId(topic.getId()))
                 .orElse(Collections.emptyList())
