@@ -1,6 +1,6 @@
 package com.example.spring_data_jpa.topic;
 
-import com.example.spring_data_jpa.article.ArticleDTO;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,10 +11,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import java.net.URI;
+import java.util.List;
 
 import lombok.RequiredArgsConstructor;
 
-import java.util.List;
+import com.example.spring_data_jpa.article.ArticleDTO;
 
 
 @RestController
@@ -24,10 +28,18 @@ class TopicController {
     private final TopicService topicService;
 
     @PostMapping
-    ResponseEntity<TopicDTO> createTopic(@RequestBody TopicCreateRequest topicCreateRequest) {
+    ResponseEntity<TopicDTO> createTopic(@RequestBody TopicCreateRequest topicCreateRequest,
+                                         UriComponentsBuilder uriBuilder) {
         TopicDTO topicDTO = this.topicService.createTopic(topicCreateRequest);
+        URI location = uriBuilder
+                .path("/api/v1/topics/{id}")
+                .buildAndExpand(topicDTO.id())
+                .toUri();
 
-        return new ResponseEntity<>(topicDTO, HttpStatus.CREATED);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setLocation(location);
+
+        return new ResponseEntity<>(headers, HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
@@ -75,8 +87,9 @@ class TopicController {
     }
 
     /*
-        About this endpoint, not sure if it's the correct path. In this request param we don't have required = false
-        because if no name is provided an empty string will be assigned and an exception will be thrown.
+        About this endpoint, not sure if it's the correct path or the correct controller. It returns articles in the
+        topic controller. In this request param we don't have required = false because if no name is provided an empty
+        string will be assigned and an exception will be thrown.
 
         /topics?name=topic/articles is not valid, because query params are always in the end of the URI.
      */

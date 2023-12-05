@@ -7,21 +7,26 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
 
+
 interface CommentRepository extends JpaRepository<Comment, Long> {
     /*
-        The below queries are not necessary, because Spring Data will create the derived queries from the name of the
-        method. I wrote them to get used to JPQL.
+        Fetches a comment with a given article id and comment id.
 
         It's very important to query for both the article id and the comment id. Querying for just the comment when the
         user made a request in the articles/3/comments/5 would result in returning the comment even if the article with
-        id 3 does not exist, the comment was just on another article.
+        id 3 does not exist, the comment was just on another article. Or if articles/invalidInput/comments/5 also would
+        return the comment if we don't query for both
+
+        Best practise for when we want to return a weak entity like comment that can exist without article is to query
+        for both since comment has the article id in the ManyToOne relationship
      */
     @Query("""
                 SELECT c
                 FROM Comment c
                 WHERE c.article.id = :articleId AND c.id = :commentId
             """)
-    Optional<Comment> findByArticleIdAndId(@Param("articleId") Long articleId, @Param("commentId")Long commentId);
+    Optional<Comment> findCommentByArticleIdAndCommentId(@Param("articleId") Long articleId,
+                                                         @Param("commentId")Long commentId);
 
     /*
         Fetches all comments for a given article on descending order based on their created date.
@@ -29,10 +34,11 @@ interface CommentRepository extends JpaRepository<Comment, Long> {
     @Query("""
                 SELECT c
                 FROM Comment c
+                JOIN FETCH c.article a
                 WHERE c.article.id = :articleId
                 ORDER BY c.createdDate DESC
             """)
-    List<Comment> findAllByArticleIdOrderByCreatedDateDesc(@Param("articleId") Long articleId);
+    List<Comment> findCommentsByArticleIdOrderByCreatedDateDesc(@Param("articleId") Long articleId);
 
 
 }

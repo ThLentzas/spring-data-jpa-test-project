@@ -1,5 +1,6 @@
 package com.example.spring_data_jpa.article;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -8,20 +9,22 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 import com.example.spring_data_jpa.comment.CommentDTO;
 import com.example.spring_data_jpa.comment.CommentService;
 import com.example.spring_data_jpa.comment.CommentCreateRequest;
 import com.example.spring_data_jpa.comment.CommentUpdateRequest;
 
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-
+import java.net.URI;
 import java.time.LocalDate;
 import java.util.List;
 
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.web.util.UriComponentsBuilder;
 
 /*
     This Controller contains both endpoints for Article and Comment, because Comment is a weak Entity and can only
@@ -36,10 +39,18 @@ class ArticleController {
     private final CommentService commentService;
 
     @PostMapping
-    ResponseEntity<ArticleDTO> createArticle(@RequestBody ArticleCreateRequest createRequest) {
+    ResponseEntity<ArticleDTO> createArticle(@RequestBody ArticleCreateRequest createRequest,
+                                             UriComponentsBuilder uriBuilder) {
         ArticleDTO articleDTO = this.articleService.createArticle(createRequest);
+        URI location = uriBuilder
+                .path("/api/v1/articles/{id}")
+                .buildAndExpand(articleDTO.id())
+                .toUri();
 
-        return new ResponseEntity<>(articleDTO, HttpStatus.CREATED);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setLocation(location);
+
+        return new ResponseEntity<>(headers, HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
@@ -90,12 +101,21 @@ class ArticleController {
         return new ResponseEntity<>(articles, HttpStatus.OK);
     }
 
-    @PostMapping("/{id}/comments")
-    ResponseEntity<CommentDTO> addComment(@PathVariable Long id,
-                                          @RequestBody CommentCreateRequest commentCreateRequest) {
-        CommentDTO commentDTO = this.commentService.addComment(id, commentCreateRequest);
+    @PostMapping("/{articleId}/comments")
+    ResponseEntity<CommentDTO> addComment(@PathVariable Long articleId,
+                                          @RequestBody CommentCreateRequest commentCreateRequest,
+                                          UriComponentsBuilder uriBuilder
+                                          ) {
+        CommentDTO commentDTO = this.commentService.addComment(articleId, commentCreateRequest);
 
-        return new ResponseEntity<>(commentDTO, HttpStatus.CREATED);
+        URI location = uriBuilder
+                .path("/api/v1/articles/{articleId}/comments/{commentId}")
+                .buildAndExpand(articleId, commentDTO.id())
+                .toUri();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setLocation(location);
+
+        return new ResponseEntity<>(headers, HttpStatus.CREATED);
     }
 
     @PutMapping("/{articleId}/comments/{commentId}/status")

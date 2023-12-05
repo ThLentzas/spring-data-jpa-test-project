@@ -22,11 +22,11 @@ class TopicService {
     private final TopicRepository topicRepository;
     private final ArticleRepository articleRepository;
     private static final TopicDTOMapper topicDTOMapper = new TopicDTOMapper();
-    private static final ArticleDTOMapper articleDTOMapper = new ArticleDTOMapper();
+    private final ArticleDTOMapper articleDTOMapper;
     private static final String TOPIC_NOT_FOUND_ERROR_MSG = "Topic was not found with id: ";
 
     TopicDTO createTopic(TopicCreateRequest createRequest) {
-        if(this.topicRepository.existsByNameIgnoringCase(createRequest.name())) {
+        if(this.topicRepository.existsByNameIgnoreCase(createRequest.name())) {
             throw new DuplicateResourceException("Topic with name already exists: " + createRequest.name());
         }
 
@@ -48,7 +48,7 @@ class TopicService {
             throw new IllegalArgumentException("You must provide a name to update the topic");
         }
 
-        if(this.topicRepository.existsByNameIgnoringCase(topicUpdateRequest.name())) {
+        if(this.topicRepository.existsByNameIgnoreCase(topicUpdateRequest.name())) {
             throw new DuplicateResourceException("The provided topic name already exists");
         }
 
@@ -91,7 +91,7 @@ class TopicService {
     }
 
     List<TopicDTO> findTopicsByName(String name) {
-        List<Topic> topics = this.topicRepository.findAllByNameContainingIgnoreCaseOrderByCreatedDateDesc(name);
+        List<Topic> topics = this.topicRepository.findTopicsByNameContainingIgnoreCaseOrderByCreatedDateDesc(name);
 
         return topics.stream()
                 .map(topicDTOMapper)
@@ -106,7 +106,7 @@ class TopicService {
             .toList();
      */
     List<TopicDTO> findAllTopics() {
-        List<Topic> topics = this.topicRepository.findAllOrderByStatusAndCreatedDateDesc();
+        List<Topic> topics = this.topicRepository.findTopicsOrderByStatusAndCreatedDateDesc();
 
         return topics.stream()
                 .map(topicDTOMapper)
@@ -114,7 +114,7 @@ class TopicService {
     }
 
     List<ArticleDTO> findArticlesByTopicId(Long topicId) {
-        List<Article> articles = this.articleRepository.findAllByTopicsId(topicId);
+        List<Article> articles = this.articleRepository.findArticlesByTopicId(topicId);
 
         return articles.stream()
                 .map(articleDTOMapper)
@@ -131,7 +131,7 @@ class TopicService {
         }
 
         return topicRepository.findByNameIgnoreCase(name)
-                .map(topic -> articleRepository.findAllByTopicsId(topic.getId()))
+                .map(topic -> articleRepository.findArticlesByTopicId(topic.getId()))
                 .orElse(Collections.emptyList())
                 .stream()
                 .map(articleDTOMapper)

@@ -1,6 +1,5 @@
 package com.example.spring_data_jpa.topic;
 
-import io.hypersistence.utils.hibernate.type.basic.PostgreSQLEnumType;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -10,14 +9,18 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+
 import org.hibernate.annotations.Type;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDate;
 
+import io.hypersistence.utils.hibernate.type.basic.PostgreSQLEnumType;
 
 /*
     In Hibernate 6.3 we can use @JdbcType(PostgreSQLEnumJdbcType.class) instead. The current version of Hibernate for
@@ -27,6 +30,7 @@ import java.time.LocalDate;
 @Table(uniqueConstraints = {
         @UniqueConstraint(columnNames = {"name"}, name = "unique_topic_name")
 })
+@EqualsAndHashCode
 @Getter
 @Setter
 @EntityListeners(AuditingEntityListener.class)

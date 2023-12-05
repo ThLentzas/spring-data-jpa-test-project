@@ -4,8 +4,8 @@ import com.example.spring_data_jpa.article.Article;
 import com.example.spring_data_jpa.article.ArticleRepository;
 import com.example.spring_data_jpa.article.ArticleStatus;
 import com.example.spring_data_jpa.exception.ResourceNotFoundException;
-
 import com.example.spring_data_jpa.exception.StatusConflictException;
+
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.stereotype.Service;
@@ -43,7 +43,7 @@ public class CommentService {
             So in total 3 queries for this method:  1 to fetch the comment, 1 to fetch the article of the comment, 1 to
             update the comment.
         */
-        Comment comment = this.commentRepository.findByArticleIdAndId(articleId, commentId).orElseThrow(
+        Comment comment = this.commentRepository.findCommentByArticleIdAndCommentId(articleId, commentId).orElseThrow(
                 () -> new ResourceNotFoundException("Comment was not found with id: " + commentId));
 
         if(comment.getStatus().equals(CommentStatus.APPROVED)) {
@@ -59,7 +59,7 @@ public class CommentService {
             this.commentRepository.delete(comment);
         }
 
-        //Here some other value than approve or reject was provided, so we should handle with some exception
+        //Here if some other value than approve or reject was provided, we should handle it with some exception
     }
 
     public void updateComment(Long articleId, Long commentId, CommentUpdateRequest updateRequest) {
@@ -69,7 +69,7 @@ public class CommentService {
             So in total 3 queries for this method:  1 to fetch the comment, 1 to fetch the article of the comment, 1 to
             update the comment.
          */
-        Comment comment = this.commentRepository.findByArticleIdAndId(articleId, commentId).orElseThrow(
+        Comment comment = this.commentRepository.findCommentByArticleIdAndCommentId(articleId, commentId).orElseThrow(
                 () -> new ResourceNotFoundException("Comment was not found with id: " + commentId));
 
         if(comment.getStatus().equals(CommentStatus.APPROVED)) {
@@ -85,7 +85,7 @@ public class CommentService {
     }
 
     public List<CommentDTO> finAllCommentsByArticleId(Long articleId) {
-        List<Comment> comments = this.commentRepository.findAllByArticleIdOrderByCreatedDateDesc(articleId);
+        List<Comment> comments = this.commentRepository.findCommentsByArticleIdOrderByCreatedDateDesc(articleId);
 
         return comments.stream()
                 .map(commentDTOMapper)

@@ -24,7 +24,7 @@ import org.springframework.stereotype.Service;
 public class ArticleService {
     private final ArticleRepository articleRepository;
     private final TopicRepository topicRepository;
-    private static final ArticleDTOMapper mapper = new ArticleDTOMapper();
+    private final ArticleDTOMapper mapper;
     private static final String ARTICLE_NOT_FOUND_ERROR_MSG = "Article was not found with id: ";
 
     ArticleDTO createArticle(ArticleCreateRequest createRequest) {
@@ -125,7 +125,7 @@ public class ArticleService {
         }
 
         if(title.isBlank()) {
-            articles = this.articleRepository.findByContentContainingIgnoringCase(content);
+            articles = this.articleRepository.findArticlesByContentContainingIgnoringCase(content);
 
             return articles.stream()
                     .map(mapper)
@@ -133,7 +133,7 @@ public class ArticleService {
         }
 
         if(content.isBlank()) {
-            articles = this.articleRepository.findByTitleContainingIgnoringCase(title);
+            articles = this.articleRepository.findArticlesByTitleContainingIgnoringCase(title);
 
             return articles.stream()
                     .map(mapper)
@@ -144,8 +144,8 @@ public class ArticleService {
             We have to create a Set to remove articles that we would include them when searching by title and include
             them again when searching by content.
          */
-        articles = this.articleRepository.findByTitleContainingIgnoringCase(title);
-        articles.addAll(this.articleRepository.findByContentContainingIgnoringCase(content));
+        articles = this.articleRepository.findArticlesByTitleContainingIgnoringCase(title);
+        articles.addAll(this.articleRepository.findArticlesByContentContainingIgnoringCase(content));
         Set<Article> articleSet = new HashSet<>(articles);
 
         return articleSet.stream()
@@ -154,7 +154,7 @@ public class ArticleService {
     }
 
     ArticleDTO findArticleById(Long articleId) {
-        Article article = articleRepository.findById(articleId).orElseThrow(() ->
+        Article article = articleRepository.findArticleByIdFetchingTopics(articleId).orElseThrow(() ->
                 new ResourceNotFoundException(ARTICLE_NOT_FOUND_ERROR_MSG + articleId));
 
         return mapper.apply(article);
@@ -209,18 +209,18 @@ public class ArticleService {
             based on their created date.
          */
         if(status.equals(ArticleStatus.PUBLISHED)) {
-            return this.articleRepository.findAllByStatusOrderByPublishedDateDesc(ArticleStatus.PUBLISHED);
+            return this.articleRepository.findPublishedArticlesOrderByPublishedDateDesc(ArticleStatus.PUBLISHED);
         }
-        return this.articleRepository.findAllByStatusOrderByCreatedDateDesc(status);
+        return this.articleRepository.findArticlesByStatusOrderByCreatedDateDesc(status);
     }
 
     private List<Article> findAllArticlesInDateRange(LocalDate startDate, LocalDate endDate) {
         List<Article> articles = new ArrayList<>();
-        List<Article >publishedArticles = this.articleRepository.findAllByStatusAndPublishedDateBetween(
+        List<Article >publishedArticles = this.articleRepository.findPublishedArticlesWithPublishedDateBetweenOrderByPublishedDateDesc(
                 ArticleStatus.PUBLISHED,
                 startDate,
                 endDate);
-        List<Article> nonPublishedArticles = this.articleRepository.findAllByStatusNotAndCreatedDateBetween(
+        List<Article> nonPublishedArticles = this.articleRepository.findNonPublishedArticlesWithCreatedDateBetweenOrderByCreatedDesc(
                 ArticleStatus.PUBLISHED,
                 startDate,
                 endDate);
@@ -240,9 +240,9 @@ public class ArticleService {
      */
     private List<Article> findAllArticlesNoFilter() {
         List<Article> articles = new ArrayList<>();
-        List<Article> publishedArticles = this.articleRepository.findAllByStatusOrderByPublishedDateDesc(
+        List<Article> publishedArticles = this.articleRepository.findPublishedArticlesOrderByPublishedDateDesc(
                 ArticleStatus.PUBLISHED);
-        List<Article> nonPublishedArticles = this.articleRepository.findAllNonPublishedOrderByStatusAndCreatedDateDesc(
+        List<Article> nonPublishedArticles = this.articleRepository.findNonPublishedArticlesOrderByStatusAndCreatedDateDesc(
                 ArticleStatus.PUBLISHED);
 
         articles.addAll(publishedArticles);

@@ -7,9 +7,11 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
 
-
+/*
+    Topic is not aware of the relationships, that's why we don't have to address N+1 query problems.
+ */
 public interface TopicRepository extends JpaRepository<Topic, Long> {
-    boolean existsByNameIgnoringCase(String name);
+    boolean existsByNameIgnoreCase(String name);
 
     /*
         Should return only 1 result otherwise we would have 2 topics with the same name and that would violate the
@@ -28,7 +30,7 @@ public interface TopicRepository extends JpaRepository<Topic, Long> {
                 ILIKE (CONCAT('%', :name, '%'))
                 ORDER BY t.createdDate DESC
             """)
-    List<Topic> findAllByNameContainingIgnoreCaseOrderByCreatedDateDesc(String name);
+    List<Topic> findTopicsByNameContainingIgnoreCaseOrderByCreatedDateDesc(@Param("name") String name);
 
     /*
         Retrieves all topics order by their status and created date in descending order.
@@ -41,5 +43,5 @@ public interface TopicRepository extends JpaRepository<Topic, Long> {
                 FROM Topic t
                 ORDER BY t.status DESC, t.createdDate DESC
             """)
-    List<Topic> findAllOrderByStatusAndCreatedDateDesc();
+    List<Topic> findTopicsOrderByStatusAndCreatedDateDesc();
 }

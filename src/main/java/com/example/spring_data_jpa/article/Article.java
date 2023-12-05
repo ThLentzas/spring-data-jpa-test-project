@@ -1,10 +1,5 @@
 package com.example.spring_data_jpa.article;
 
-import com.example.spring_data_jpa.topic.Topic;
-
-import java.time.LocalDate;
-import java.util.Set;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
@@ -18,16 +13,21 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
 import jakarta.persistence.UniqueConstraint;
+
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 
-import org.hibernate.annotations.Type;
-
-import io.hypersistence.utils.hibernate.type.basic.PostgreSQLEnumType;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.hibernate.annotations.Type;
 
+import java.time.LocalDate;
+import java.util.Set;
+
+import io.hypersistence.utils.hibernate.type.basic.PostgreSQLEnumType;
+
+import com.example.spring_data_jpa.topic.Topic;
 
 /*
     In Hibernate 6.3 we can use @JdbcType(PostgreSQLEnumJdbcType.class) instead. The current version of Hibernate for
