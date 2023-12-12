@@ -154,10 +154,6 @@ public interface ArticleRepository extends JpaRepository<Article, Long> {
         FROM article a
         INNER JOIN article_topic at ON a.id = at.article_id
         WHERE at.topic_id = ?
-
-       When the articleDTOMapper calls the getTopics() because the fetch type is LAZY for every article a query will
-       be executed to fetch all the relevant topics creating an N+1 issue.  By providing our own JPQL query we solve
-       the N+1 select issue
      */
     @Query("""
                 SELECT a
