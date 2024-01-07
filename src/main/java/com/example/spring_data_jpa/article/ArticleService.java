@@ -143,8 +143,10 @@ public class ArticleService {
         /*
             We have to create a Set to remove articles that we would include them when searching by title and include
             them again when searching by content.
+
+            Hibernate returns an immutable list so when we call addAll we would get UnsupportedOperationException
          */
-        articles = this.articleRepository.findArticlesByTitleContainingIgnoringCase(title);
+        articles = new ArrayList<>(this.articleRepository.findArticlesByTitleContainingIgnoringCase(title));
         articles.addAll(this.articleRepository.findArticlesByContentContainingIgnoringCase(content));
         Set<Article> articleSet = new HashSet<>(articles);
 
