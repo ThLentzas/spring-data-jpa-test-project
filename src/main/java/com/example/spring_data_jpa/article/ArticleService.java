@@ -47,7 +47,7 @@ public class ArticleService {
         Article article = this.articleRepository.findById(articleId).orElseThrow(() ->
                 new ResourceNotFoundException(ARTICLE_NOT_FOUND_ERROR_MSG + articleId));
 
-        if(article.getStatus().equals(ArticleStatus.PUBLISHED)) {
+        if (article.getStatus().equals(ArticleStatus.PUBLISHED)) {
             throw new StatusConflictException("Article is already published and cannot be modified");
         }
 
@@ -87,27 +87,27 @@ public class ArticleService {
     void updateArticleStatus(Long articleId, ArticleUpdateStatusRequest updateStatusRequest) {
         Article article = this.articleRepository.findById(articleId).orElseThrow(() ->
                 new ResourceNotFoundException(ARTICLE_NOT_FOUND_ERROR_MSG + articleId));
-        if(article.getStatus().equals(ArticleStatus.PUBLISHED)) {
+        if (article.getStatus().equals(ArticleStatus.PUBLISHED)) {
             throw new StatusConflictException("Article already published");
         }
 
-        if(article.getStatus().equals(ArticleStatus.CREATED)
+        if (article.getStatus().equals(ArticleStatus.CREATED)
                 && !updateStatusRequest.status().equals(ArticleStatus.SUBMITTED)) {
             throw new IllegalArgumentException("Article status is: " + article.getStatus().name().toLowerCase());
         }
 
-        if(article.getStatus().equals(ArticleStatus.SUBMITTED)
+        if (article.getStatus().equals(ArticleStatus.SUBMITTED)
                 && !updateStatusRequest.status().equals(ArticleStatus.APPROVED)) {
             throw new IllegalArgumentException("Article status is: " + article.getStatus().name().toLowerCase());
         }
 
-        if(article.getStatus().equals(ArticleStatus.APPROVED)
+        if (article.getStatus().equals(ArticleStatus.APPROVED)
                 && !updateStatusRequest.status().equals(ArticleStatus.PUBLISHED)) {
             throw new IllegalArgumentException("Article status is: " + article.getStatus().name().toLowerCase());
         }
 
         article.setStatus(updateStatusRequest.status());
-        if(article.getStatus().equals(ArticleStatus.PUBLISHED)) {
+        if (article.getStatus().equals(ArticleStatus.PUBLISHED)) {
             article.setPublishedDate(LocalDate.now());
         }
 
@@ -120,11 +120,11 @@ public class ArticleService {
     List<ArticleDTO> findArticlesByTitleAndOrContent(String title, String content) {
         List<Article> articles;
 
-        if(title.isBlank() && content.isBlank()) {
+        if (title.isBlank() && content.isBlank()) {
             throw new IllegalArgumentException("You have to provide either the title or the content of the article");
         }
 
-        if(title.isBlank()) {
+        if (title.isBlank()) {
             articles = this.articleRepository.findArticlesByContentContainingIgnoringCase(content);
 
             return articles.stream()
@@ -132,7 +132,7 @@ public class ArticleService {
                     .toList();
         }
 
-        if(content.isBlank()) {
+        if (content.isBlank()) {
             articles = this.articleRepository.findArticlesByTitleContainingIgnoringCase(title);
 
             return articles.stream()
@@ -165,14 +165,14 @@ public class ArticleService {
     List<ArticleDTO> findAllArticles(ArticleStatus status, LocalDate startDate, LocalDate endDate) {
         List<Article> articles;
 
-        if(status != null && startDate != null && endDate != null) {
+        if (status != null && startDate != null && endDate != null) {
             throw new IllegalArgumentException("Select 1 filter at a time");
         }
 
         /*
             No filtering all articles returned.
          */
-        if(status == null && startDate == null && endDate == null) {
+        if (status == null && startDate == null && endDate == null) {
             articles = findAllArticlesNoFilter();
 
             return articles.stream()
@@ -180,7 +180,7 @@ public class ArticleService {
                     .toList();
         }
 
-        if(status == null && (startDate == null || endDate == null)) {
+        if (status == null && (startDate == null || endDate == null)) {
             throw new IllegalArgumentException("You must provide both dates");
         }
 
@@ -188,7 +188,7 @@ public class ArticleService {
             Filter is date range. We return the published articles where their published date is in the provided date
             range. For the rest of the articles we return based on their created date.
          */
-        if(status == null) {
+        if (status == null) {
             articles = findAllArticlesInDateRange(startDate, endDate);
 
             return articles.stream()
@@ -210,7 +210,7 @@ public class ArticleService {
             published date. For any other status we return those articles with the given status in descending order
             based on their created date.
          */
-        if(status.equals(ArticleStatus.PUBLISHED)) {
+        if (status.equals(ArticleStatus.PUBLISHED)) {
             return this.articleRepository.findPublishedArticlesOrderByPublishedDateDesc(ArticleStatus.PUBLISHED);
         }
         return this.articleRepository.findArticlesByStatusOrderByCreatedDateDesc(status);
@@ -218,7 +218,7 @@ public class ArticleService {
 
     private List<Article> findAllArticlesInDateRange(LocalDate startDate, LocalDate endDate) {
         List<Article> articles = new ArrayList<>();
-        List<Article >publishedArticles = this.articleRepository.findPublishedArticlesWithPublishedDateBetweenOrderByPublishedDateDesc(
+        List<Article> publishedArticles = this.articleRepository.findPublishedArticlesWithPublishedDateBetweenOrderByPublishedDateDesc(
                 ArticleStatus.PUBLISHED,
                 startDate,
                 endDate);
@@ -264,16 +264,15 @@ public class ArticleService {
             Case 2: Topic doesn't exist, so we create it first and then add it to the list.
          */
         for (TopicDTO topicDTO : topicsDTO) {
-            if (topicDTO.name() != null && !topicDTO.name().isBlank()) {
-                this.topicRepository.findByNameIgnoreCase(topicDTO.name()).ifPresentOrElse(
-                        topics::add,
-                        () -> {
-                            Topic topic = new Topic(topicDTO.name());
-                            this.topicRepository.save(topic);
-                            topics.add(topic);
-                        });
-            }
+            this.topicRepository.findByNameIgnoreCase(topicDTO.name()).ifPresentOrElse(
+                    topics::add, () -> {
+                        Topic topic = new Topic(topicDTO.name());
+                        this.topicRepository.save(topic);
+                        topics.add(topic);
+                    });
+
         }
+
         return topics;
     }
 }
