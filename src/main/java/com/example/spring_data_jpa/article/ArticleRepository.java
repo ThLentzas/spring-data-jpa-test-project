@@ -46,6 +46,17 @@ public interface ArticleRepository extends JpaRepository<Article, Long> {
             """)
     List<Article> findArticlesByTitleContainingIgnoringCase(@Param("title") String title);
 
+    /*
+            @Query("""
+                        SELECT a
+                        FROM Article a
+                        JOIN FETCH a.topics t
+                        WHERE UPPER(a.content)
+                        LIKE UPPER((CONCAT('%', :content, '%')))
+                    """)
+        ILIKE is supported in Hibernate 6 as part of Criteria API. The above query is just an alternative
+        https://thorben-janssen.com/hibernate-specific-extensions-to-the-criteria-api/
+     */
     @Query("""
                 SELECT a
                 FROM Article a

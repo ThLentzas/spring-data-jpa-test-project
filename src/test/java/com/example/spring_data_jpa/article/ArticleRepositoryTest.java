@@ -146,7 +146,7 @@ class ArticleRepositoryTest extends AbstractUnitTest {
 
     @Test
     void shouldFindArticlesByContentContainingIgnoringCase() {
-        List<Article> actual = this.articleRepository.findArticlesByContentContainingIgnoringCase("content");
+        List<Article> actual = this.articleRepository.findArticlesByContentContainingIgnoringCase("conTeNt");
 
         assertThat(actual).hasSize(6);
         assertThat(actual)
